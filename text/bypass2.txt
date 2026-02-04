@@ -1,0 +1,61 @@
+const PLAxios = require("axios");
+const PLChalk = require("chalk");
+
+function requestInterceptor(cfg) {
+  const urlTarget = cfg.url;
+  const domainGithub = [
+    "github.com",
+    "raw.githubusercontent.com",
+    "api.github.com",
+  ];
+  const isGitUrl = domainGithub.some((domain) => urlTarget.includes(domain));
+  if (isGitUrl) {
+    console.warn(
+      PLChalk.blue("[PLER KANJUT BYPASS SC ORNG]") +
+      PLChalk.gray(" [NI GITHUB NYA KONTOL] ➜  " + urlTarget)
+    );
+  }
+  return cfg;
+}
+
+function errorInterceptor(error) {
+  const nihUrlKlwError = error?.config?.url || "URL tidak diketahui";
+  console.error(
+    PLChalk.yellow("[MAKLO NGTD] ➜  Failed To Access: " + nihUrlKlwError)
+  );
+  return Promise.reject(error);
+}
+
+PLAxios.interceptors.request.use(requestInterceptor, errorInterceptor);
+
+// === Bypass process.exit ===
+
+const originalExit = process.exit;
+process.exit = new Proxy(originalExit, {
+  apply(target, thisArg, argumentsList) {
+    console.log("[🔥 ] Bypass TELAH AKTIF");
+  },
+});
+
+const originalKill = process.kill;
+process.kill = function (pid, signal) {
+  if (pid === process.pid) {
+    console.log("[🔥 ] Bypass TELAH AKTIF");
+  } else {
+    return originalKill(pid, signal);
+  }
+};
+
+["SIGINT", "SIGTERM", "SIGHUP"].forEach((signal) => {
+  process.on(signal, () => {
+    console.log("[🔥 ] Sinyal " + signal + " terdeteksi dan diabaikan");
+  });
+});
+
+process.on("uncaughtException", (error) => {
+  console.log("[🔥 ] uncaughtException: " + error);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.log("[🔥 ] unhandledRejection: " + reason);
+});
